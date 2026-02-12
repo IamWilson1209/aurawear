@@ -18,110 +18,90 @@ AuraWear 使用兩種資料庫：
 ```mermaid
 erDiagram
     User {
-        string id PK "e.g. user_001"
-        string user_name
-        timestamp created_at
+        VARCHAR id PK
+        VARCHAR user_name
+        TIMESTAMP created_at
     }
 
     Sex {
-        int id PK
-        string name "Male / Female / Unisex / Untold"
+        INT id PK
+        VARCHAR name
     }
 
-    Style {
-        int id PK
-        string name "e.g. Streetwear"
+    StyleOption {
+        INT id PK
+        VARCHAR name
     }
 
     Season {
-        int id PK
-        string name "e.g. Light Spring"
+        INT id PK
+        VARCHAR name
     }
 
     Color {
-        int id PK
-        int season_id FK
-        string color_code "e.g. ls_01"
-        string name "e.g. Peach Blossom"
-        string color_hex "e.g. #FFB7A5"
+        INT id PK
+        INT season_id FK
+        VARCHAR color_code
+        VARCHAR name
+        VARCHAR color_hex
     }
 
     Category {
-        int id PK
-        string name "top / pants / dress / ..."
-    }
-
-    Image {
-        string id PK "e.g. df_MEN-Denim-id_00000080-01_7_additional"
-        string image_url
-        int category_id FK
-        text dominant_hex "JSON List of hex strings"
-        string product_link "nullable"
-        string title
-        string style
-        string brand
-        text tags "JSON List of strings"
-        text meta_text
+        INT id PK
+        VARCHAR name
     }
 
     ImageAction {
-        int id PK
-        string name "LIKE / DISLIKE / ADD_TO_CART"
+        INT id PK
+        VARCHAR name
     }
 
     Session {
-        int id PK
-        string user_id FK
-        string user_image
-        int gender_id FK
-        int style_id FK
-        int detected_season_id FK
-        string skin_color_hex
-        string hair_color_hex
-        string eye_color
-        timestamp created_at
+        INT id PK
+        VARCHAR user_id FK
+        VARCHAR user_image
+        INT gender_id FK
+        INT style_id FK
+        INT detected_season_id FK
+        VARCHAR skin_color_hex
+        VARCHAR hair_color_hex
+        VARCHAR eye_color
+        TIMESTAMP created_at
     }
 
     Round {
-        int id PK
-        int session_id FK
-        text selected_palette_ids "JSON Array of color_code"
-        text user_comment "nullable"
-        timestamp created_at
+        INT id PK
+        INT session_id FK
+        JSONB selected_palette_ids
+        TEXT user_comment
+        TIMESTAMP created_at
     }
 
     RoundRecommendedResult {
-        int id PK
-        int round_id FK
-        string image_id FK
-        int rank_order
-        int action_type_id FK "nullable"
-        text dislike_desc "nullable"
-        text explanation_text
-        boolean isInCart
-        timestamp created_at
+        INT id PK
+        INT round_id FK
+        VARCHAR image_id
+        INT rank_order
+        INT action_type_id FK
+        TEXT dislike_desc
+        TEXT explanation_text
+        BOOLEAN isInCart
+        TIMESTAMP created_at
     }
 
     Cart {
-        int id PK
-        string user_id FK
-        string image_id FK
-        string link
-        timestamp update_at
+        INT id PK
+        VARCHAR user_id FK
+        VARCHAR image_id
+        VARCHAR link
+        TIMESTAMP update_at
     }
 
+    %% Relationships (Core Business Tables)
     User ||--o{ Session : "creates"
-    Session }o--|| Sex : "gender_id"
-    Session }o--|| Style : "style_id"
-    Session }o--|| Season : "detected_season_id"
-    Session ||--o{ Round : "contains"
     User ||--o{ Cart : "has"
+    Session ||--o{ Round : "contains"
     Round ||--o{ RoundRecommendedResult : "generates"
-    RoundRecommendedResult }o--|| Image : "references"
-    RoundRecommendedResult }o--o| ImageAction : "action_type_id"
-    Cart }o--|| Image : "references"
-    Image }o--|| Category : "category_id"
-    Color }o--|| Season : "belongs_to"
 ```
 
 ---
@@ -169,46 +149,29 @@ erDiagram
 
 記錄每個 Round 被推薦的圖片與使用者對其的操作。
 
-| 欄位               | 類型                   | 說明                       | 範例                  |
-| ------------------ | ---------------------- | -------------------------- | --------------------- |
-| `id`               | `SERIAL` PK            | 記錄 ID                    | `1`                   |
-| `round_id`         | `INT` FK → Round       | 所屬 Round                 | `1`                   |
-| `image_id`         | `VARCHAR` FK → Image   | 推薦圖片 ID                | `df_00089`            |
-| `rank_order`       | `INT`                  | 推薦排序（分數高→低）      | `1`                   |
-| `action_type_id`   | `INT` FK → ImageAction | 使用者操作（nullable）     | `1` (LIKE)            |
-| `dislike_desc`     | `TEXT`                 | 不喜歡原因描述（nullable） | `風格不符`            |
-| `explanation_text` | `TEXT`                 | AI 推薦說明                | `完美的調色板匹配...` |
-| `isInCart`         | `BOOLEAN`              | 是否已加入購物車           | `true`                |
-| `created_at`       | `TIMESTAMP`            | 建立時間                   | `2024-05-20 15:30:00` |
+| 欄位               | 類型                   | 說明                                         | 範例                  |
+| ------------------ | ---------------------- | -------------------------------------------- | --------------------- |
+| `id`               | `SERIAL` PK            | 記錄 ID                                      | `1`                   |
+| `round_id`         | `INT` FK → Round       | 所屬 Round                                   | `1`                   |
+| `image_id`         | `VARCHAR`              | 推薦圖片 ID（AstraDB Image Collection \_id） | `df_00089`            |
+| `rank_order`       | `INT`                  | 推薦排序（分數高→低）                        | `1`                   |
+| `action_type_id`   | `INT` FK → ImageAction | 使用者操作（nullable）                       | `1` (LIKE)            |
+| `dislike_desc`     | `TEXT`                 | 不喜歡原因描述（nullable）                   | `風格不符`            |
+| `explanation_text` | `TEXT`                 | AI 推薦說明                                  | `完美的調色板匹配...` |
+| `isInCart`         | `BOOLEAN`              | 是否已加入購物車                             | `true`                |
+| `created_at`       | `TIMESTAMP`            | 建立時間                                     | `2024-05-20 15:30:00` |
 
 #### `Cart` — 購物車
 
 購物車以使用者（User）為單位，跨所有 Session 收集使用者加入的圖片。
 
-| 欄位        | 類型                 | 說明                         | 範例                  |
-| ----------- | -------------------- | ---------------------------- | --------------------- |
-| `id`        | `SERIAL` PK          | 購物車項目 ID                | `1`                   |
-| `user_id`   | `VARCHAR` FK → User  | 所屬使用者（跨所有 Session） | `user_001`            |
-| `image_id`  | `VARCHAR` FK → Image | 圖片 ID                      | `df_00089`            |
-| `link`      | `VARCHAR`            | 商品外部連結                 | `https://...`         |
-| `update_at` | `TIMESTAMP`          | 加入購物車時間               | `2024-05-20 15:30:00` |
-
-#### `Image` — 圖片資料
-
-前處理程式將服飾圖片轉換後的結構化資料。注意：`emb` (向量) 存放於 AstraDB。
-
-| 欄位           | 類型                | 說明                 | 範例                                        |
-| -------------- | ------------------- | -------------------- | ------------------------------------------- |
-| `id`           | `VARCHAR` PK        | 商品唯一識別碼       | `df_MEN-Denim-id_00000080-01_7_additional`  |
-| `image_url`    | `VARCHAR`           | 圖片相對路徑         | `MEN-Denim-id_00000080-01_7_additional.jpg` |
-| `category_id`  | `INT` FK → Category | 衣物分類             | `1` (top)                                   |
-| `dominant_hex` | `JSONB`             | 主色十六進制碼列表   | `["#322E2F", "#DADADA"]`                    |
-| `product_link` | `VARCHAR`           | 商品連結（nullable） | `null`                                      |
-| `title`        | `VARCHAR`           | 商品描述標題         | `The lower clothing is of long length...`   |
-| `style`        | `VARCHAR`           | 風格標籤             | `round cotton`                              |
-| `brand`        | `VARCHAR`           | 品牌                 | `""`                                        |
-| `tags`         | `JSONB`             | 結構化屬性標籤       | `["long", "round", "not-cardigan"]`         |
-| `meta_text`    | `TEXT`              | 元描述文字           | `The lower clothing is of long length...`   |
+| 欄位        | 類型                | 說明                                     | 範例                  |
+| ----------- | ------------------- | ---------------------------------------- | --------------------- |
+| `id`        | `SERIAL` PK         | 購物車項目 ID                            | `1`                   |
+| `user_id`   | `VARCHAR` FK → User | 所屬使用者（跨所有 Session）             | `user_001`            |
+| `image_id`  | `VARCHAR`           | 圖片 ID（AstraDB Image Collection \_id） | `df_00089`            |
+| `link`      | `VARCHAR`           | 商品外部連結                             | `https://...`         |
+| `update_at` | `TIMESTAMP`         | 加入購物車時間                           | `2024-05-20 15:30:00` |
 
 ---
 
@@ -396,10 +359,8 @@ PostgreSQL 與 AstraDB 之間透過共享 ID 進行邏輯關聯（非物理外�
 ```mermaid
 flowchart LR
     subgraph PostgreSQL
-        PG_Image["Image<br/>id: VARCHAR PK"]
         PG_Session["Session<br/>id: SERIAL PK"]
         PG_Round["Round<br/>id: SERIAL PK"]
-        PG_Category["Category<br/>id: SERIAL PK"]
 
         PG_Session --> PG_Round
     end
@@ -409,8 +370,6 @@ flowchart LR
         Astra_Round["Round Vector Collection<br/>_id: session_{sid}_round_{rid}"]
     end
 
-    PG_Image -. "_id 對應 id" .-> Astra_Image
-    PG_Category -. "category_id 對應 id" .-> Astra_Image
     PG_Session -. "session_id 對應 id" .-> Astra_Round
     PG_Round -. "round_number 對應 id" .-> Astra_Round
 
@@ -422,7 +381,5 @@ flowchart LR
 
 | PostgreSQL 表 | PostgreSQL 欄位 | AstraDB Collection      | AstraDB 欄位   | 說明           |
 | ------------- | --------------- | ----------------------- | -------------- | -------------- |
-| `Image`       | `id`            | Image Collection        | `_id`          | 圖片唯一識別碼 |
-| `Category`    | `id`            | Image Collection        | `category_id`  | 衣物分類       |
 | `Session`     | `id`            | Round Vector Collection | `session_id`   | Session 識別碼 |
 | `Round`       | `id` (序號)     | Round Vector Collection | `round_number` | Round 輪次編號 |
