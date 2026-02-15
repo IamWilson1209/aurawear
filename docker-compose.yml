@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: aurawear_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aurawear_user
+      POSTGRES_PASSWORD: aurawear_pass_2026
+      POSTGRES_DB: aurawear_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - '5432:5432'
+    volumes:
+      - aurawear_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./docker/postgres/import_colors.sql:/docker-entrypoint-initdb.d/02-import_colors.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U aurawear_user -d aurawear_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: aurawear_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@aurawear.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+volumes:
+  aurawear_data:
+    driver: local
+  pgadmin_data:
+    driver: local
